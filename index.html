@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>JLPT N2 Grammar | Japanese & Nepali</title>
+
+<style>
+:root {
+    color-scheme: light;
+    --bg: #f1f5f9;
+    --card: white;
+    --text: #17324a;
+    --accent: #087f8c;
+}
+
+body.dark {
+    color-scheme: dark;
+    --bg: #101b2a;
+    --card: #1b2b3e;
+    --text: #e8f0f8;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 system-ui, sans-serif;
+}
+
+header {
+    background: #123c55;
+    color: white;
+    padding: 32px 18px;
+    text-align: center;
+}
+
+h1 {
+    margin: 0;
+    font-size: clamp(28px, 5vw, 44px);
+}
+
+header p {
+    margin: 5px;
+}
+
+main {
+    max-width: 850px;
+    margin: auto;
+    padding: 20px;
+}
+
+.controls, .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 3px 15px #0001;
+}
+
+.controls {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+input, select, button {
+    font: inherit;
+    border: 1px solid #94a3b8;
+    border-radius: 8px;
+    padding: 9px 12px;
+}
+
+input, select {
+    width: 100%;
+    margin: 5px 0;
+}
+
+button {
+    cursor: pointer;
+    background: var(--accent);
+    color: white;
+    border: 0;
+}
+
+button:disabled {
+    opacity: 0.4;
+}
+
+button.secondary {
+    background: #475569;
+}
+
+.bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+progress {
+    width: 100%;
+    accent-color: var(--accent);
+}
+
+h2 {
+    font-size: 22px;
+    margin: 0 0 8px;
+}
+
+.sheet {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+    background: white;
+}
+
+.example {
+    padding: 10px;
+    background: var(--bg);
+    border-radius: 8px;
+    margin: 8px 0;
+}
+
+footer {
+    text-align: center;
+    padding: 24px;
+}
+
+details {
+    margin: 12px 0;
+}
+
+summary {
+    cursor: pointer;
+}
+
+#status {
+    margin: 8px 0;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+
+<h1>JLPT N2 文法 1–139</h1>
+
+<p>日本語・नेपाली Grammar Learning App</p>
+
+<p>139 Grammar | 278 Examples | Practice</p>
+
+<p>Developed by Roshan BK</p>
+
+<button id="theme" class="secondary">
+    ☀️ Light / Dark 🌙
+</button>
+
+</header>
+
+<main>
+
+<section class="controls">
+
+<div id="progressText"></div>
+
+<progress id="progress" max="139" value="0">
+</progress>
+
+<input
+    id="search"
+    placeholder="Search Grammar: につき / 1"
+    aria-label="Search grammar"
+>
+
+<select id="chapter" aria-label="Chapter">
+</select>
+
+<div class="bar">
+
+<button id="filter" class="secondary">
+    Show unstudied only
+</button>
+
+<button id="random">
+    Random Practice
+</button>
+
+</div>
+
+<div id="status"></div>
+
+</section>
+
+<section id="cards"></section>
+
+<div class="bar">
+
+<button id="prev">
+    ◀ Previous
+</button>
+
+<span id="page"></span>
+
+<button id="next">
+    Next ▶
+</button>
+
+</div>
+
+</main>
+
+<footer>
+
+<p>JLPT N2 Japanese–Nepali Study App</p>
+
+<p>Created by Roshan BK</p>
+
+<p>日本語の勉強を頑張りましょう！</p>
+
+<p>© 2026 Roshan BK</p>
+
+</footer>
+
+<script src="data.js"></script>
+
+<script>
+
+const $ = id => document.getElementById(id);
+
+const chapters = [
+    [1, "スタッフ募集のお知らせ"],
+    [9, "転任のあいさつ"],
+    [22, "ホテルの仕事"],
+    [30, "台風情報"],
+    [37, "就職活動"],
+    [48, "苦労した5年間"],
+    [60, "オオカミと生態系"],
+    [73, "取引先で"],
+    [78, "食べ放題"],
+    [92, "満員電車"],
+    [100, "ラーメンの紹介"],
+    [107, "ウォーキングシューズの開発"],
+    [119, "人生の転機"],
+    [132, "オリンピックの開催について"]
+];
+
+let done = new Set();
+
+try {
+    done = new Set(
+        JSON.parse(
+            localStorage.getItem("n2done") || "[]"
+        )
+    );
+} catch(e) {}
+
+let page = 0;
+let only = false;
+let random = null;
+
+const size = 8;
+
+function el(tag, text, cls) {
+
+    let x = document.createElement(tag);
+
+    if(text) {
+        x.textContent = text;
+    }
+
+    if(cls) {
+        x.className = cls;
+    }
+
+    return x;
+}
+
+function save() {
+
+    try {
+
+        localStorage.setItem(
+            "n2done",
+            JSON.stringify([...done])
+        );
+
+    } catch(e) {}
+
+}
+
+$("chapter").append(
+    new Option("All Chapters", "all")
+);
+
+chapters.forEach(([n, title], i) => {
+
+    $("chapter").append(
+        new Option(
+            `${i + 1}. ${title}`,
+            i
+        )
+    );
+
+});
+
+function speak(text) {
+
+    if(!("speechSynthesis" in window)) {
+
+        alert("Audio is not supported.");
+
+        return;
+
+    }
+
+    let japanese = text.replace(
+        /[（(][^）)]*[）)]/g,
+        ""
+    );
+
+    let voice =
+        new SpeechSynthesisUtterance(japanese);
+
+    voice.lang = "ja-JP";
+    voice.rate = 0.85;
+
+    speechSynthesis.cancel();
+
+    speechSynthesis.speak(voice);
+
+}
+
+function render() {
+
+    if(typeof DATA === "undefined") {
+
+        $("status").textContent =
+        "Please upload data.js to your repository.";
+
+        return;
+    }
+
+    let q = $("search")
+        .value.trim().toLowerCase();
+
+    let c = $("chapter").value;
+
+    let list = DATA.filter(r =>
+
+        (!only || !done.has(r.n))
+
+        &&
+
+        (
+            c === "all"
+
+            ||
+
+            (
+                r.n >= chapters[+c][0]
+
+                &&
+
+                r.n <
+                (chapters[+c + 1]?.[0] || 140)
+            )
+        )
+
+        &&
+
+        (
+            !q
+
+            ||
+
+            [
+                r.g,
+                r.reading,
+                r.form,
+                r.en,
+                ...r.ex
+            ]
+            .join(" ")
+            .toLowerCase()
+            .includes(q)
+
+            ||
+
+            String(r.n) === q
+        )
+
+    );
+
+    if(random !== null) {
+
+        list = list.filter(
+            r => r.n === random
+        );
+
+    }
+
+    page = Math.min(
+        page,
+        Math.max(
+            0,
+            Math.ceil(list.length / size) - 1
+        )
+    );
+
+    $("cards").replaceChildren();
+
+    $("progress").value = done.size;
+
+    $("progressText").textContent =
+        `学習進捗 / अध्ययन प्रगति:
+        ${done.size} / 139`;
+
+    $("status").textContent =
+        `${list.length} Grammar Found`;
+
+    $("page").textContent =
+        `${page + 1} /
+        ${Math.max(
+            1,
+            Math.ceil(list.length / size)
+        )}`;
+
+    $("prev").disabled = page === 0;
+
+    $("next").disabled =
+        (page + 1) * size >= list.length;
+
+    for(let r of list.slice(
+
+        page * size,
+
+        (page + 1) * size
+
+    )) {
+
+        let card = el(
+            "article",
+            "",
+            "card"
+        );
+
+        card.append(
+            el("h2", `${r.n}. ${r.g}`)
+        );
+
+        let image = el(
+            "img",
+            "",
+            "sheet"
+        );
+
+        image.src =
+            "data:image/png;base64," + r.img;
+
+        image.alt =
+            `Grammar ${r.n}: ${r.g}`;
+
+        image.loading = "lazy";
+
+        card.append(image);
+
+        let details = el("details");
+
+        details.append(
+
+            el(
+                "summary",
+                "🔊 Japanese Text / 音声練習"
+            )
+
+        );
+
+        for(let text of r.ex) {
+
+            let box = el(
+                "div",
+                text,
+                "example"
+            );
+
+            let button = el(
+                "button",
+                "▶ Listen Japanese"
+            );
+
+            button.onclick = () => speak(text);
+
+            box.append(
+                document.createElement("br"),
+                button
+            );
+
+            details.append(box);
+
+        }
+
+        card.append(details);
+
+        let quiz = el("details");
+
+        quiz.append(
+
+            el(
+                "summary",
+                "練習問題 / अभ्यास प्रश्न"
+            ),
+
+            el(
+                "p",
+                "माथिको अभ्यास हल गरेर उत्तर मिलाउनुहोस्।"
+            ),
+
+            el("p", r.ex[0])
+
+        );
+
+        card.append(quiz);
+
+        let button = el(
+
+            "button",
+
+            done.has(r.n)
+
+            ?
+
+            "✓ Studied / पढिसकेको"
+
+            :
+
+            "Mark as Studied"
+
+        );
+
+        button.onclick = () => {
+
+            if(done.has(r.n)) {
+
+                done.delete(r.n);
+
+            } else {
+
+                done.add(r.n);
+
+            }
+
+            save();
+
+            render();
+
+        };
+
+        card.append(button);
+
+        $("cards").append(card);
+
+    }
+
+}
+
+function reset() {
+
+    random = null;
+
+    page = 0;
+
+    render();
+
+}
+
+$("search").oninput = reset;
+
+$("chapter").onchange = reset;
+
+$("filter").onclick = () => {
+
+    only = !only;
+
+    $("filter").textContent = only
+
+        ? "Show All"
+
+        : "Show Unstudied Only";
+
+    reset();
+
+};
+
+$("random").onclick = () => {
+
+    $("search").value = "";
+
+    $("chapter").value = "all";
+
+    only = false;
+
+    $("filter").textContent =
+        "Show Unstudied Only";
+
+    random =
+        1 + Math.floor(Math.random() * 139);
+
+    page = 0;
+
+    render();
+
+};
+
+$("prev").onclick = () => {
+
+    page--;
+
+    render();
+
+    window.scrollTo(0, 0);
+
+};
+
+$("next").onclick = () => {
+
+    page++;
+
+    render();
+
+    window.scrollTo(0, 0);
+
+};
+
+$("theme").onclick = () => {
+
+    document.body.classList.toggle("dark");
+
+};
+
+render();
+
+</script>
+
+</body>
+</html>
